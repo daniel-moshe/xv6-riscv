@@ -22,6 +22,27 @@ sys_getpid(void)
 }
 
 uint64
+sys_getppid(void)
+{
+  int ppid = 0;
+  struct proc * parent_proc;
+  struct spinlock wait_lock;
+
+  // According to kernel/proc.h:95
+  initlock(&wait_lock, "wait_lock");
+  acquire(&wait_lock);
+  parent_proc = myproc()->parent;
+  release(&wait_lock);
+
+  if (parent_proc != 0)
+  {
+    ppid = parent_proc->pid;
+  }
+
+  return ppid;
+}
+
+uint64
 sys_fork(void)
 {
   return fork();
