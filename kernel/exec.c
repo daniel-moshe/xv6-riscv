@@ -49,6 +49,14 @@ exec(char *path, char **argv)
   if((pagetable = proc_pagetable(p)) == 0)
     goto bad;
 
+  // Allocating and mapping the first page for each process
+  // This pageis gonna be protected without write or execute permissions so null deref will fail
+  if(mappages(pagetable, 0, PGSIZE, (uint64)kalloc(), PTE_R) < 0){
+    uvmfree(pagetable, 0);
+    return 0;
+  }
+  sz = 0x1000;
+
   // Load program into memory.
   for(i=0, off=elf.phoff; i<elf.phnum; i++, off+=sizeof(ph)){
     if(readi(ip, 0, (uint64)&ph, off, sizeof(ph)) != sizeof(ph))

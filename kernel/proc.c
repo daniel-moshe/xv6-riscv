@@ -224,7 +224,7 @@ uchar initcode[] = {
   0x93, 0x08, 0x70, 0x00, 0x73, 0x00, 0x00, 0x00,
   0x93, 0x08, 0x20, 0x00, 0x73, 0x00, 0x00, 0x00,
   0xef, 0xf0, 0x9f, 0xff, 0x2f, 0x69, 0x6e, 0x69,
-  0x74, 0x00, 0x00, 0x24, 0x00, 0x00, 0x00, 0x00,
+  0x74, 0x00, 0x00, 0x24, 0x10, 0x00, 0x00, 0x00, // Changed the argv variable to be at the second page
   0x00, 0x00, 0x00, 0x00
 };
 
@@ -240,11 +240,11 @@ userinit(void)
   // allocate one user page and copy initcode's instructions
   // and data into it.
   uvmfirst(p->pagetable, initcode, sizeof(initcode));
-  p->sz = PGSIZE;
+  p->sz = PGSIZE * 2; // Because we've allocated 2 pages
 
   // prepare for the very first "return" from kernel to user.
-  p->trapframe->epc = 0;      // user program counter
-  p->trapframe->sp = PGSIZE;  // user stack pointer
+  p->trapframe->epc = 0x1000;      // user program counter
+  p->trapframe->sp = PGSIZE * 2;  // user stack pointer
 
   safestrcpy(p->name, "initcode", sizeof(p->name));
   p->cwd = namei("/");

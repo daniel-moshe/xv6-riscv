@@ -4,7 +4,7 @@ ENTRY( _main )
 
 SECTIONS
 {
- . = 0x0;
+ . = 0x1000; /* Make all user mode programs to be mapped at 0x1000 */
  
   .text : {
     *(.text .text.*)
