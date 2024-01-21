@@ -9,7 +9,7 @@ main(int argc, char *argv[])
 
   printf("Im going to deref null so i'll probably will cause a trap accessing memory 0x0 :(\n");
 
-  *i = 7;
+  printf("%d", *i);
 
   exit(0);
 }
