@@ -104,4 +104,9 @@ struct proc {
   struct file *ofile[NOFILE];  // Open files
   struct inode *cwd;           // Current directory
   char name[16];               // Process name (debugging)
+
+  uint64 comm_addr;            // Address for communication between send and recv
+  int comm_id;                 // ID for communication between send and recv
+  int comm_len;                // Length of buffer for communication between send and recv
+  int comm_type;               // Type for communication can be 1 for send or 0 for recv
 };

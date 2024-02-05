@@ -681,3 +681,125 @@ procdump(void)
     printf("\n");
   }
 }
+
+#define min(a, b) ((a) < (b) ? (a) : (b))
+
+int
+send(int id, uint64 buf, int len)
+{
+  struct proc *p = myproc();
+  struct proc *pp;
+  void *chan;
+  int ret;
+
+  chan = (void *)((uint64)id);
+
+  acquire(&wait_lock);
+
+  p->comm_id = id;
+  p->comm_type = 1;
+
+  for (;;)
+  {
+    for(pp = proc; pp < &proc[NPROC]; pp++){
+      if (pp->state == UNUSED) {
+        continue;
+      }
+
+      if (pp->comm_id == id && pp->comm_type == 0) {
+        ret = copyum(p->pagetable, buf, pp->pagetable, pp->comm_addr, min(len, pp->comm_len));
+        if (ret) {
+          // printf("send[%d] copyum succeeded\n", p->pid);
+          ret = min(len, pp->comm_len);
+        } else {
+          printf("send[%d] copyum failed\n", p->pid);
+          ret = -1;
+        }
+        pp->comm_len = ret;
+
+        release(&wait_lock);
+        wakeup(chan);
+
+        return ret;
+      }
+    }
+
+    // printf("send[%d] Waiting until there's someone that receicving\n", p->pid);
+    // Waiting until there's someone that receicving
+    sleep(chan, &wait_lock);
+    // printf("send[%d] Woke up, there someone who's listening\n", p->pid);
+  }
+
+  return -1;
+}
+
+int
+recv(int id, uint64 buf, int len)
+{
+  struct proc *pp, *p = myproc();
+  void *chan;
+  int recieved = 0;
+
+  chan = (void *)((uint64)id);
+
+  acquire(&wait_lock);
+  // printf("recv[%d] waking up on chan\n", p->pid);
+  wakeup(chan);
+
+  p->comm_addr = buf;
+  p->comm_len = len;
+  p->comm_id = id;
+  p->comm_type = 0;
+
+  // printf("recv[%d] p->comm_addr is [%p]\n", p->pid, p->comm_addr);
+
+  for(;;){
+    for(pp = proc; pp < &proc[NPROC]; pp++){
+      if(pp->state == UNUSED){
+        continue;
+      }
+      
+      if (pp->comm_id == id && pp->comm_type == 1) {
+        // printf("recv[%d] sleeping on chan\n", p->pid);
+        sleep(chan, &wait_lock);
+        recieved = 1;
+        break;
+      }
+    }
+
+    if (recieved) {
+      break;
+    }
+  }
+
+  // printf("recv[%d] going to sleep on chan\n", p->pid);
+  release(&wait_lock);
+
+  // printf("recv[%d] Woke up from sleeping, recieved data!\n", p->pid);
+
+  return p->comm_len;
+}
+
+int
+copyum(pagetable_t src_pt, uint64 src, pagetable_t dst_pt, uint64 dst, int len)
+{
+  uint64 va0, pa0, va1, pa1, n = 0;
+
+  while(len > 0) {
+    va0 = PGROUNDDOWN(src);
+    va1 = PGROUNDDOWN(dst);
+    pa0 = walkaddr(src_pt, va0);
+    pa1 = walkaddr(dst_pt, va1);
+    if(pa0 == 0 || pa1 == 0)
+      return 0;
+
+    n = min(PGSIZE - (src - va0), PGSIZE - (dst - va1));
+    if(n > len)
+      n = len;
+    memmove((void *)(pa1 + (dst - va1)), (void *)(pa0 + (src - va0)), n);
+
+    len -= n;
+  }
+
+  return n;
+}

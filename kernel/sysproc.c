@@ -89,3 +89,31 @@ sys_uptime(void)
   release(&tickslock);
   return xticks;
 }
+
+uint64
+sys_send(void)
+{
+  int id;
+  uint64 buf;
+  int len;
+
+  argint(0, &id);
+  argint(2, &len);
+  argaddr(1, &buf);
+
+  return send(id, buf, len);
+}
+
+uint64
+sys_recv(void)
+{
+  int id;
+  uint64 buf;
+  int len;
+
+  argint(0, &id);
+  argaddr(1, &buf);
+  argint(2, &len);
+
+  return recv(id, buf, len);
+}

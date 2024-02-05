@@ -22,6 +22,8 @@ int getpid(void);
 char* sbrk(int);
 int sleep(int);
 int uptime(void);
+int send(int, char*, int);
+int recv(int, char*, int);
 
 // ulib.c
 int stat(const char*, struct stat*);
