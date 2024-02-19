@@ -108,5 +108,5 @@ struct proc {
   uint64 comm_addr;            // Address for communication between send and recv
   int comm_id;                 // ID for communication between send and recv
   int comm_len;                // Length of buffer for communication between send and recv
-  int comm_type;               // Type for communication can be 1 for send or 0 for recv
+  int comm_type;               // Type for communication can be 1 for recv or 0 for nothing/send (but send doesnt need this)
 };

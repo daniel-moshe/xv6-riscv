@@ -697,7 +697,6 @@ send(int id, uint64 buf, int len)
   acquire(&wait_lock);
 
   p->comm_id = id;
-  p->comm_type = 1;
 
   for (;;)
   {
@@ -706,7 +705,7 @@ send(int id, uint64 buf, int len)
         continue;
       }
 
-      if (pp->comm_id == id && pp->comm_type == 0) {
+      if (pp->comm_id == id && pp->comm_type == 1) {
         ret = copyum(p->pagetable, buf, pp->pagetable, pp->comm_addr, min(len, pp->comm_len));
         if (ret) {
           // printf("send[%d] copyum succeeded\n", p->pid);
@@ -716,6 +715,7 @@ send(int id, uint64 buf, int len)
           ret = -1;
         }
         pp->comm_len = ret;
+        pp->comm_type = 0;
 
         release(&wait_lock);
         wakeup(chan);
@@ -736,40 +736,24 @@ send(int id, uint64 buf, int len)
 int
 recv(int id, uint64 buf, int len)
 {
-  struct proc *pp, *p = myproc();
+  struct proc *p = myproc();
   void *chan;
-  int recieved = 0;
 
   chan = (void *)((uint64)id);
+
+  p->comm_addr = buf;
+  p->comm_len = len;
+  p->comm_id = id;
+  p->comm_type = 1;
 
   acquire(&wait_lock);
   // printf("recv[%d] waking up on chan\n", p->pid);
   wakeup(chan);
 
-  p->comm_addr = buf;
-  p->comm_len = len;
-  p->comm_id = id;
-  p->comm_type = 0;
-
   // printf("recv[%d] p->comm_addr is [%p]\n", p->pid, p->comm_addr);
 
-  for(;;){
-    for(pp = proc; pp < &proc[NPROC]; pp++){
-      if(pp->state == UNUSED){
-        continue;
-      }
-      
-      if (pp->comm_id == id && pp->comm_type == 1) {
-        // printf("recv[%d] sleeping on chan\n", p->pid);
-        sleep(chan, &wait_lock);
-        recieved = 1;
-        break;
-      }
-    }
-
-    if (recieved) {
-      break;
-    }
+  while (p->comm_type == 1) {
+    sleep(chan, &wait_lock);
   }
 
   // printf("recv[%d] going to sleep on chan\n", p->pid);
