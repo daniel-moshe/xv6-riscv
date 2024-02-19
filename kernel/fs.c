@@ -660,7 +660,8 @@ dirlink(struct inode *dp, char *name, uint inum)
       break;
   }
 
-  strncpy(de.name, name, DIRSIZ);
+  de.len = strlen(name);
+  strncpy(de.name, name, de.len);
   de.inum = inum;
   if(writei(dp, 0, (uint64)&de, off, sizeof(de)) != sizeof(de))
     return -1;

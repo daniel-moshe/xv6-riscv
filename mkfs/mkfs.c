@@ -120,11 +120,13 @@ main(int argc, char *argv[])
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, ".");
+  de.len = strlen(de.name);
   iappend(rootino, &de, sizeof(de));
 
   bzero(&de, sizeof(de));
   de.inum = xshort(rootino);
   strcpy(de.name, "..");
+  de.len = strlen(de.name);
   iappend(rootino, &de, sizeof(de));
 
   for(i = 2; i < argc; i++){
@@ -152,6 +154,7 @@ main(int argc, char *argv[])
     bzero(&de, sizeof(de));
     de.inum = xshort(inum);
     strncpy(de.name, shortname, DIRSIZ);
+    de.len = strlen(de.name);
     iappend(rootino, &de, sizeof(de));
 
     while((cc = read(fd, buf, sizeof(buf))) > 0)
